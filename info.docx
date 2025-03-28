@@ -1,0 +1,48 @@
+az group create --resource-group <name>
+
+acr, aci, resource group
+
+
+
+Hier is een alles-in-één Bicep-bestand dat ervoor zorgt dat:
+✅ Azure Container Registry (ACR) altijd een image heeft (indien leeg, push een initieel image).
+✅ Container Instance (ACI) automatisch images uit ACR haalt bij elke nieuwe deployment.
+✅ VNet, subnet, Public IP en NSG worden aangemaakt en correct gekoppeld.
+✅ Container logs worden naar Azure Monitor gestuurd voor inzicht en troubleshooting.
+
+📌 Hoe werkt dit?
+1. ACR wordt aangemaakt en blijft behouden – geen herhaalde pushes nodig.
+2. De container haalt altijd de nieuwste image uit ACR – geen handmatige image-push nodig.
+3. Als ACR nog leeg is, push handmatig een image (éénmalig) met:
+- az acr build --image myimage:latest --registry myacr --file Dockerfile .
+4. ACI haalt automatisch het laatst gepushte image binnen bij het starten.
+
+
+🚀 Hoe werkt de image-pull?
+1. Je pusht de image één keer (indien niet aanwezig in ACR):
+2. az acr build --image myimage:latest --registry myappacr --file Dockerfile .
+
+Bij elke ACI-deployment pakt Azure automatisch de nieuwste versie.
+
+Je hoeft de image niet steeds opnieuw te pushen – de deployment werkt altijd.
+
+📌 Waarom is dit beter?
+✅ Één enkel Bicep-bestand: Alles zit in één script – VNet, Public IP, ACR, ACI, NSG.
+✅ Geen herhaalde image-push nodig: ACI haalt altijd de nieuwste image uit ACR.
+✅ Automatische logging & monitoring: Logs worden naar Azure Monitor gestuurd.
+✅ Beveiliging via VNet & NSG: Alleen poort 80 open voor HTTP-verkeer.
+✅ Eenvoudige herdeployments: Geen extra configuratie nodig – gewoon az deployment group create uitvoeren!
+
+Met dit bestand hoef je dus nooit meer handmatig te updaten, behalve als je een nieuwe image build.
+
+
+
+
+
+
+
+📌 Samenvatting
+1. Eerste keer deployen?            → az deployment group create --resource-group myResourceGroup --template-file main.bicep
+2. Nieuwe image pushen?             → az acr build --image myimage:latest --registry myappacr --file Dockerfile .
+3. Update zonder opnieuw deployen?  → az container restart --name myappContainerGroup --resource-group myResourceGroup
+4. Alles verwijderen behalve ACR?   → az container delete, az network vnet delete, az network nsg delete, az monitor log-analytics workspace delete
